@@ -1,0 +1,1086 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Guilloché Pattern Generator</title>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+    body {
+      font-family: sans-serif;
+      display: flex;
+      flex-direction: row;
+      align-items: flex-start;
+      margin: 20px;
+    }
+    #controlsContainer {
+      display: flex;
+      flex-direction: column;
+      margin-right: 20px;
+      max-width: 380px;
+    }
+    #controls, #extraControls {
+      margin-bottom: 20px;
+      padding: 10px;
+      border: 1px solid #ccc;
+    }
+    #densityContainer {
+      margin-top: 10px;
+    }
+    label {
+      margin-right: 5px;
+    }
+    canvas {
+      border: 1px solid #ccc;
+    }
+
+    /* Additional controls sections */
+    #gapControls, #waveControls, #angleControls, #roseControls, #maurerControls, #ringControls {
+      margin-top: 10px;
+      display: none;
+    }
+    /* Epicycloid & Lissajous – new patterns (pattern15, pattern16) */
+    #epicycloidControls, #lissajousControls {
+      margin-top: 10px;
+      display: none;
+      border: 1px solid #ccc;
+      padding: 8px;
+    }
+    #saveButtonContainer, #gridButtonContainer {
+      margin-top: 20px;
+    }
+    .paramLabel {
+      display: inline-block;
+      width: 90px;
+    }
+    .rangeValue {
+      margin-left: 5px;
+      color: #333;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+  <!-- Control Panel -->
+  <div id="controlsContainer">
+    <div id="controls">
+      <h2>Main Settings</h2>
+      <label for="baseShape">Base shape:</label>
+      <select id="baseShape">
+        <option value="circle">Circle</option>
+        <option value="square">Square</option>
+        <option value="diamond">Diamond</option>
+        <option value="oval">Oval</option>
+      </select>
+      <br><br>
+      <label for="patternType">Pattern:</label>
+      <select id="patternType">
+        <option value="pattern1">Spiral</option>
+        <option value="pattern4">Lines</option>
+        <option value="pattern5">Vertical waves</option>
+        <option value="pattern6">Angled</option>
+        <option value="pattern8">Rose</option>
+        <option value="pattern10">Maurer Rose</option>
+        <option value="pattern11">Simple Ring</option>
+        <option value="pattern15">Epicycloid/Hypocycloid</option>
+        <option value="pattern16">Lissajous</option>
+      </select>
+      <br><br>
+      <!-- Density slider is displayed only for patterns that need it -->
+      <div id="densityContainer">
+        <label for="density">
+          Density (e.g. number of lines / rotations):
+        </label>
+        <input type="range" id="density" min="1" max="100" value="50">
+      </div>
+    </div>
+
+    <!-- Additional controls panel -->
+    <div id="extraControls">
+      <!-- gap (for Lines, Waves, Angled) -->
+      <div id="gapControls">
+        <label for="gapInterval">Every how many elements (gap):</label>
+        <input type="range" id="gapInterval" min="1" max="20" value="5">
+        <span id="gapIntervalValue" class="rangeValue">5</span>
+        <br>
+        <label for="gapLength">Gap length (in elements):</label>
+        <input type="range" id="gapLength" min="0" max="20" value="2">
+        <span id="gapLengthValue" class="rangeValue">2</span>
+      </div>
+
+      <!-- vertical waves -->
+      <div id="waveControls">
+        <label for="waveDensity">Wave density:</label>
+        <input type="range" id="waveDensity" min="1" max="20" value="5">
+        <span id="waveDensityValue" class="rangeValue">5</span>
+      </div>
+
+      <!-- angled -->
+      <div id="angleControls">
+        <label for="curveAngle">Angle (degrees):</label>
+        <input type="range" id="curveAngle" min="-90" max="90" value="15">
+        <span id="curveAngleValue" class="rangeValue">15°</span>
+      </div>
+
+      <!-- Rose -->
+      <div id="roseControls">
+        <label for="rosePetals">Rose Petals:</label>
+        <input type="range" id="rosePetals" min="1" max="12" value="4">
+        <span id="rosePetalsValue" class="rangeValue">4</span>
+      </div>
+
+      <!-- Maurer -->
+      <div id="maurerControls">
+        <label for="maurerN">Maurer n:</label>
+        <input type="range" id="maurerN" min="1" max="20" value="5">
+        <span id="maurerNValue" class="rangeValue">5</span>
+        <br>
+        <label for="maurerD">Maurer d:</label>
+        <input type="range" id="maurerD" min="1" max="20" value="4">
+        <span id="maurerDValue" class="rangeValue">4</span>
+      </div>
+
+      <!-- Simple Ring -->
+      <div id="ringControls">
+        <label for="innerRadius">Inner Radius:</label>
+        <input type="range" id="innerRadius" min="10" max="300" value="50">
+        <span id="innerRadiusValue" class="rangeValue">50</span>
+        <br>
+        <label for="outerRadius">Outer Radius:</label>
+        <input type="range" id="outerRadius" min="50" max="300" value="250">
+        <span id="outerRadiusValue" class="rangeValue">250</span>
+        <br>
+        <label for="ringNodes">Nodes:</label>
+        <input type="range" id="ringNodes" min="1" max="200" value="80">
+        <span id="ringNodesValue" class="rangeValue">80</span>
+        <br>
+        <label for="ringDiv">Div:</label>
+        <input type="range" id="ringDiv" min="2" max="50" value="11">
+        <span id="ringDivValue" class="rangeValue">11</span>
+      </div>
+
+      <!-- Epicycloid/Hypocycloid (pattern15) -->
+      <div id="epicycloidControls">
+        <h3>Epicycloid/Hypocycloid</h3>
+        <label class="paramLabel" for="epiBig">R (big circle):</label>
+        <input type="range" id="epiBig" min="10" max="300" step="1" value="150">
+        <span id="epiBigVal" class="rangeValue">150</span>
+        <br>
+        <label class="paramLabel" for="epiSmall">r (small circle):</label>
+        <input type="range" id="epiSmall" min="1" max="150" step="1" value="40">
+        <span id="epiSmallVal" class="rangeValue">40</span>
+        <br>
+        <label class="paramLabel" for="epiDist">d (offset):</label>
+        <input type="range" id="epiDist" min="1" max="150" step="1" value="70">
+        <span id="epiDistVal" class="rangeValue">70</span>
+        <br>
+        <label>Mode:</label>
+        <input type="radio" name="epiMode" id="epiModeEpi" value="epi" checked> Epicycloid
+        <input type="radio" name="epiMode" id="epiModeHypo" value="hypo"> Hypocycloid
+      </div>
+
+      <!-- Lissajous (pattern16) -->
+      <div id="lissajousControls">
+        <h3>Lissajous</h3>
+        <label class="paramLabel" for="lisAx">A_x:</label>
+        <input type="range" id="lisAx" min="1" max="200" step="1" value="100">
+        <span id="lisAxVal" class="rangeValue">100</span>
+        <br>
+        <label class="paramLabel" for="lisAy">A_y:</label>
+        <input type="range" id="lisAy" min="1" max="200" step="1" value="100">
+        <span id="lisAyVal" class="rangeValue">100</span>
+        <br>
+        <label class="paramLabel" for="lisFx">f_x:</label>
+        <input type="range" id="lisFx" min="1" max="10" step="1" value="3">
+        <span id="lisFxVal" class="rangeValue">3</span>
+        <br>
+        <label class="paramLabel" for="lisFy">f_y:</label>
+        <input type="range" id="lisFy" min="1" max="10" step="1" value="2">
+        <span id="lisFyVal" class="rangeValue">2</span>
+        <br>
+        <label class="paramLabel" for="lisPhase">φ (deg):</label>
+        <input type="range" id="lisPhase" min="0" max="180" step="1" value="90">
+        <span id="lisPhaseVal" class="rangeValue">90°</span>
+      </div>
+    </div>
+
+    <!-- Buttons: "Grid" mode and "Save SVG" -->
+    <div id="gridButtonContainer">
+      <button id="toggleGridButton">Grid: OFF</button>
+    </div>
+    <div id="saveButtonContainer">
+      <button id="saveSvgButton">Save as SVG</button>
+    </div>
+  </div>
+
+  <!-- Canvas -->
+  <canvas id="canvas" width="600" height="600"></canvas>
+
+  <script>
+    /* ============== 1) Variables, DOM references ============== */
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+
+    const baseShapeSelect = document.getElementById('baseShape');
+    const patternTypeSelect = document.getElementById('patternType');
+
+    const densitySlider = document.getElementById('density');
+    const densityContainer = document.getElementById('densityContainer');
+
+    // gap
+    const gapControls = document.getElementById('gapControls');
+    const gapIntervalSlider = document.getElementById('gapInterval');
+    const gapLengthSlider = document.getElementById('gapLength');
+    const gapIntervalValue = document.getElementById('gapIntervalValue');
+    const gapLengthValue = document.getElementById('gapLengthValue');
+
+    // waves
+    const waveControls = document.getElementById('waveControls');
+    const waveDensitySlider = document.getElementById('waveDensity');
+    const waveDensityValue = document.getElementById('waveDensityValue');
+
+    // angle
+    const angleControls = document.getElementById('angleControls');
+    const curveAngleSlider = document.getElementById('curveAngle');
+    const curveAngleValue = document.getElementById('curveAngleValue');
+
+    // rose
+    const roseControls = document.getElementById('roseControls');
+    const rosePetalsSlider = document.getElementById('rosePetals');
+    const rosePetalsValue = document.getElementById('rosePetalsValue');
+
+    // maurer
+    const maurerControls = document.getElementById('maurerControls');
+    const maurerNSlider = document.getElementById('maurerN');
+    const maurerNValue = document.getElementById('maurerNValue');
+    const maurerDSlider = document.getElementById('maurerD');
+    const maurerDValue = document.getElementById('maurerDValue');
+
+    // ring
+    const ringControls = document.getElementById('ringControls');
+    const innerRadiusSlider = document.getElementById('innerRadius');
+    const innerRadiusValue = document.getElementById('innerRadiusValue');
+    const outerRadiusSlider = document.getElementById('outerRadius');
+    const outerRadiusValue = document.getElementById('outerRadiusValue');
+    const ringNodesSlider = document.getElementById('ringNodes');
+    const ringNodesValue = document.getElementById('ringNodesValue');
+    const ringDivSlider = document.getElementById('ringDiv');
+    const ringDivValue = document.getElementById('ringDivValue');
+
+    // Epicycloid/Hypocycloid (pattern15)
+    const epicycloidControls = document.getElementById('epicycloidControls');
+    const epiBig = document.getElementById('epiBig');
+    const epiBigVal = document.getElementById('epiBigVal');
+    const epiSmall = document.getElementById('epiSmall');
+    const epiSmallVal = document.getElementById('epiSmallVal');
+    const epiDist = document.getElementById('epiDist');
+    const epiDistVal = document.getElementById('epiDistVal');
+    const epiModeEpi = document.getElementById('epiModeEpi');
+    const epiModeHypo = document.getElementById('epiModeHypo');
+
+    // Lissajous (pattern16)
+    const lissajousControls = document.getElementById('lissajousControls');
+    const lisAx = document.getElementById('lisAx');
+    const lisAxVal = document.getElementById('lisAxVal');
+    const lisAy = document.getElementById('lisAy');
+    const lisAyVal = document.getElementById('lisAyVal');
+    const lisFx = document.getElementById('lisFx');
+    const lisFxVal = document.getElementById('lisFxVal');
+    const lisFy = document.getElementById('lisFy');
+    const lisFyVal = document.getElementById('lisFyVal');
+    const lisPhase = document.getElementById('lisPhase');
+    const lisPhaseVal = document.getElementById('lisPhaseVal');
+
+    // SVG & grid
+    const saveSvgButton = document.getElementById('saveSvgButton');
+    const toggleGridButton = document.getElementById('toggleGridButton');
+    let bothDirections = false; // flag for "Grid"
+
+    /* ============== 2) Drawing the base shape ============== */
+    function drawBaseShape(ctx, shape, cx, cy, radius) {
+      ctx.strokeStyle = '#000';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      switch (shape) {
+        case 'circle':
+          ctx.arc(cx, cy, radius, 0, 2 * Math.PI);
+          break;
+        case 'square':
+          ctx.rect(cx - radius, cy - radius, radius * 2, radius * 2);
+          break;
+        case 'diamond':
+          ctx.moveTo(cx, cy - radius);
+          ctx.lineTo(cx + radius, cy);
+          ctx.lineTo(cx, cy + radius);
+          ctx.lineTo(cx - radius, cy);
+          ctx.closePath();
+          break;
+        case 'oval':
+          ctx.ellipse(cx, cy, radius, radius * 0.6, 0, 0, 2 * Math.PI);
+          break;
+      }
+      ctx.stroke();
+    }
+
+    /* ============== 3) Drawing specific patterns on the Canvas ============== */
+
+    // (1) Spiral
+    function drawSpiral(ctx, cx, cy, radius, density) {
+      ctx.strokeStyle = 'blue';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      const turns = density;
+      const maxTheta = turns * 2 * Math.PI;
+      const k = radius / maxTheta;
+      let first = true;
+      for (let theta = 0; theta <= maxTheta; theta += 0.01) {
+        const r = k * theta;
+        const x = cx + r * Math.cos(theta);
+        const y = cy + r * Math.sin(theta);
+        if (first) { ctx.moveTo(x, y); first = false; }
+        else { ctx.lineTo(x, y); }
+      }
+      ctx.stroke();
+    }
+
+    // (4) Lines
+    function drawLines(ctx, cx, cy, radius, density, gapInterval, gapLength, both) {
+      ctx.strokeStyle = 'blue';
+      ctx.lineWidth = 1;
+      const numLines = Math.floor(density);
+      for (let i = 0; i < numLines; i++) {
+        if ((i % (gapInterval + gapLength)) >= gapInterval) continue;
+        let angle = (2 * Math.PI * i) / numLines;
+
+        // one direction
+        ctx.beginPath();
+        ctx.moveTo(cx, cy);
+        let x = cx + radius * Math.cos(angle);
+        let y = cy + radius * Math.sin(angle);
+        ctx.lineTo(x, y);
+        ctx.stroke();
+
+        // other direction
+        if (both) {
+          ctx.beginPath();
+          ctx.moveTo(cx, cy);
+          let angle2 = angle + Math.PI;
+          let x2 = cx + radius * Math.cos(angle2);
+          let y2 = cy + radius * Math.sin(angle2);
+          ctx.lineTo(x2, y2);
+          ctx.stroke();
+        }
+      }
+    }
+
+    // (5) Vertical waves
+    function drawWaves(ctx, cx, cy, radius, density, gapInterval, gapLength, waveD, both) {
+      ctx.strokeStyle = 'blue';
+      ctx.lineWidth = 1;
+      const numLines = Math.floor(density);
+      const amplitude = 20;
+      const steps = 100;
+
+      function oneWave(angle) {
+        ctx.beginPath();
+        let first = true;
+        for (let j = 0; j <= steps; j++) {
+          const t = j / steps;
+          const baseX = cx + (radius * t) * Math.cos(angle);
+          const baseY = cy + (radius * t) * Math.sin(angle);
+          const offset = amplitude * Math.sin(2 * Math.PI * waveD * t);
+          const x = baseX + offset * (-Math.sin(angle));
+          const y = baseY + offset * Math.cos(angle);
+          if (first) { ctx.moveTo(x, y); first = false; }
+          else { ctx.lineTo(x, y); }
+        }
+        ctx.stroke();
+      }
+
+      for (let i = 0; i < numLines; i++) {
+        if ((i % (gapInterval + gapLength)) >= gapInterval) continue;
+        let angle = (2 * Math.PI * i) / numLines;
+        oneWave(angle);
+        if (both) {
+          oneWave(angle + Math.PI);
+        }
+      }
+    }
+
+    // (6) Angled
+    function drawAngle(ctx, cx, cy, radius, density, gapInterval, gapLength, curveAngle, both) {
+      ctx.strokeStyle = 'blue';
+      ctx.lineWidth = 1;
+      const numLines = Math.floor(density);
+      const angleOffset = curveAngle * Math.PI / 180;
+
+      for (let i = 0; i < numLines; i++) {
+        if ((i % (gapInterval + gapLength)) >= gapInterval) continue;
+        let angle = (2 * Math.PI * i) / numLines;
+
+        ctx.beginPath();
+        ctx.moveTo(cx, cy);
+        let endX = cx + radius * Math.cos(angle);
+        let endY = cy + radius * Math.sin(angle);
+        let controlX = cx + (radius / 2) * Math.cos(angle + angleOffset);
+        let controlY = cy + (radius / 2) * Math.sin(angle + angleOffset);
+        ctx.quadraticCurveTo(controlX, controlY, endX, endY);
+        ctx.stroke();
+
+        if (both) {
+          ctx.beginPath();
+          ctx.moveTo(cx, cy);
+          let angle2 = angle + Math.PI;
+          let endX2 = cx + radius * Math.cos(angle2);
+          let endY2 = cy + radius * Math.sin(angle2);
+          let controlX2 = cx + (radius / 2) * Math.cos(angle2 + angleOffset);
+          let controlY2 = cy + (radius / 2) * Math.sin(angle2 + angleOffset);
+          ctx.quadraticCurveTo(controlX2, controlY2, endX2, endY2);
+          ctx.stroke();
+        }
+      }
+    }
+
+    // (8) Rose
+    function drawRose(ctx, cx, cy, radius, petals) {
+      ctx.strokeStyle = 'blue';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      let first = true;
+      const steps = 1000;
+      for (let j = 0; j <= steps; j++) {
+        const t = j / steps;
+        const theta = t * 2 * Math.PI;
+        const r = radius * Math.cos(petals * theta);
+        const x = cx + r * Math.cos(theta);
+        const y = cy + r * Math.sin(theta);
+        if (first) { ctx.moveTo(x, y); first = false; }
+        else { ctx.lineTo(x, y); }
+      }
+      ctx.stroke();
+    }
+
+    // (10) Maurer Rose
+    function drawMaurerRose(ctx, cx, cy, radius, n, d, both) {
+      ctx.strokeStyle = 'blue';
+      ctx.lineWidth = 1;
+      const m = 2 - ((n * d) % 2);
+      const limit = Math.PI * d * m;
+
+      ctx.beginPath();
+      let first = true;
+      for (let t = 0; t < limit; t += 0.01) {
+        let rr = radius * Math.cos((n / d) * t);
+        let x = cx + rr * Math.cos(t);
+        let y = cy + rr * Math.sin(t);
+        if (first) { ctx.moveTo(x, y); first = false; }
+        else { ctx.lineTo(x, y); }
+      }
+      ctx.stroke();
+
+      if (both) {
+        ctx.beginPath();
+        first = true;
+        for (let t = 0; t < limit; t += 0.01) {
+          let rr = radius * Math.cos((n / d) * t);
+          let x = cx + rr * Math.cos(t + Math.PI);
+          let y = cy + rr * Math.sin(t + Math.PI);
+          if (first) { ctx.moveTo(x, y); first = false; }
+          else { ctx.lineTo(x, y); }
+        }
+        ctx.stroke();
+      }
+    }
+
+    // (11) Simple Ring
+    function drawSimpleRing(ctx, cx, cy, inner, outer, nodes, div, both) {
+      ctx.strokeStyle = 'blue';
+      ctx.lineWidth = 1;
+      const range = (outer - inner) / 2;
+      const mid = inner + range;
+      const limit = 2 * Math.PI * div;
+
+      ctx.beginPath();
+      let first = true;
+      for (let t = 0; t <= limit; t += 0.005) {
+        let r = mid + Math.sin((t * nodes) / div) * range;
+        let x = cx + Math.cos(t) * r;
+        let y = cy + Math.sin(t) * r;
+        if (first) { ctx.moveTo(x, y); first = false; }
+        else { ctx.lineTo(x, y); }
+      }
+      ctx.closePath();
+      ctx.stroke();
+
+      if (both) {
+        ctx.beginPath();
+        first = true;
+        for (let t = 0; t <= limit; t += 0.005) {
+          let r = mid + Math.sin((t * nodes) / div) * range;
+          let x = cx + Math.cos(t + Math.PI) * r;
+          let y = cy + Math.sin(t + Math.PI) * r;
+          if (first) { ctx.moveTo(x, y); first = false; }
+          else { ctx.lineTo(x, y); }
+        }
+        ctx.closePath();
+        ctx.stroke();
+      }
+    }
+
+    // (15) Epicycloid/Hypocycloid
+    function drawEpicycloid(ctx, cx, cy, R, r, d, isHypo) {
+      ctx.strokeStyle = 'blue';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      let first = true;
+      let maxT = 2 * Math.PI * (R / r);
+      let step = 0.01;
+      for (let t = 0; t <= maxT; t += step) {
+        let xx, yy;
+        if (!isHypo) {
+          // epicycloid
+          xx = (R + r) * Math.cos(t) - d * Math.cos(((R + r) / r) * t);
+          yy = (R + r) * Math.sin(t) - d * Math.sin(((R + r) / r) * t);
+        } else {
+          // hypocycloid
+          xx = (R - r) * Math.cos(t) + d * Math.cos(((R - r) / r) * t);
+          yy = (R - r) * Math.sin(t) - d * Math.sin(((R - r) / r) * t);
+        }
+        let X = cx + xx;
+        let Y = cy + yy;
+        if (first) { ctx.moveTo(X, Y); first = false; }
+        else { ctx.lineTo(X, Y); }
+      }
+      ctx.stroke();
+    }
+
+    // (16) Lissajous
+    function drawLissajous(ctx, cx, cy, Ax, Ay, fx, fy, phaseDeg) {
+      ctx.strokeStyle = 'blue';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      let first = true;
+      let phi = phaseDeg * (Math.PI / 180);
+      let maxF = Math.max(fx, fy);
+      let maxT = 2 * Math.PI * maxF;
+      let step = 0.001 * maxF;
+      for (let t = 0; t <= maxT; t += step) {
+        let x = Ax * Math.sin(fx * t + phi);
+        let y = Ay * Math.sin(fy * t);
+        if (first) {
+          ctx.moveTo(cx + x, cy + y);
+          first = false;
+        } else {
+          ctx.lineTo(cx + x, cy + y);
+        }
+      }
+      ctx.stroke();
+    }
+
+    /* ============== 4) Main draw() function ============== */
+    function draw() {
+      const cx = canvas.width / 2;
+      const cy = canvas.height / 2;
+      const baseRadius = 250;
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      drawBaseShape(ctx, baseShapeSelect.value, cx, cy, baseRadius);
+
+      // Reading slider values:
+      const density = parseFloat(densitySlider.value);
+      const gapIntervalVal = parseInt(gapIntervalSlider.value);
+      const gapLengthVal = parseInt(gapLengthSlider.value);
+      const waveD = parseFloat(waveDensitySlider.value);
+      const angleVal = parseFloat(curveAngleSlider.value);
+      const roseP = parseInt(rosePetalsSlider.value);
+      const maurN = parseFloat(maurerNSlider.value);
+      const maurD = parseFloat(maurerDSlider.value);
+      const inR = parseFloat(innerRadiusSlider.value);
+      const outR = parseFloat(outerRadiusSlider.value);
+      const ringN = parseFloat(ringNodesSlider.value);
+      const ringDivV = parseFloat(ringDivSlider.value);
+
+      const eBig = parseFloat(epiBig.value);
+      const eSmall = parseFloat(epiSmall.value);
+      const eDist = parseFloat(epiDist.value);
+      const eIsHypo = epiModeHypo.checked;
+
+      const lisA_x = parseFloat(lisAx.value);
+      const lisA_y = parseFloat(lisAy.value);
+      const lisF_x = parseFloat(lisFx.value);
+      const lisF_y = parseFloat(lisFy.value);
+      const lisPh = parseFloat(lisPhase.value);
+
+      // Choosing pattern
+      const pattern = patternTypeSelect.value;
+      switch (pattern) {
+        case 'pattern1':
+          drawSpiral(ctx, cx, cy, baseRadius, density);
+          break;
+        case 'pattern4':
+          drawLines(ctx, cx, cy, baseRadius, density, gapIntervalVal, gapLengthVal, bothDirections);
+          break;
+        case 'pattern5':
+          drawWaves(ctx, cx, cy, baseRadius, density, gapIntervalVal, gapLengthVal, waveD, bothDirections);
+          break;
+        case 'pattern6':
+          drawAngle(ctx, cx, cy, baseRadius, density, gapIntervalVal, gapLengthVal, angleVal, bothDirections);
+          break;
+        case 'pattern8':
+          drawRose(ctx, cx, cy, baseRadius, roseP);
+          break;
+        case 'pattern10':
+          drawMaurerRose(ctx, cx, cy, baseRadius, maurN, maurD, bothDirections);
+          break;
+        case 'pattern11':
+          drawSimpleRing(ctx, cx, cy, inR, outR, ringN, ringDivV, bothDirections);
+          break;
+        case 'pattern15':
+          drawEpicycloid(ctx, cx, cy, eBig, eSmall, eDist, eIsHypo);
+          break;
+        case 'pattern16':
+          drawLissajous(ctx, cx, cy, lisA_x, lisA_y, lisF_x, lisF_y, lisPh);
+          break;
+      }
+    }
+
+    /* ============== 5) Generating SVG ============== */
+    function generateSVG() {
+      const cx = 300;
+      const cy = 300;
+      const baseRadius = 250;
+      let svgString = `<?xml version="1.0" encoding="UTF-8"?>\n`;
+      svgString += `<svg width="600" height="600" xmlns="http://www.w3.org/2000/svg">\n`;
+
+      // Base shape
+      switch (baseShapeSelect.value) {
+        case 'circle':
+          svgString += `<circle cx="${cx}" cy="${cy}" r="${baseRadius}" stroke="#000" stroke-width="2" fill="none"/>\n`;
+          break;
+        case 'square':
+          svgString += `<rect x="${cx - baseRadius}" y="${cy - baseRadius}" width="${baseRadius * 2}" height="${baseRadius * 2}" stroke="#000" stroke-width="2" fill="none"/>\n`;
+          break;
+        case 'diamond':
+          let dPath = `M ${cx} ${cy - baseRadius}
+                       L ${cx + baseRadius} ${cy}
+                       L ${cx} ${cy + baseRadius}
+                       L ${cx - baseRadius} ${cy}
+                       Z`;
+          svgString += `<path d="${dPath}" stroke="#000" stroke-width="2" fill="none"/>\n`;
+          break;
+        case 'oval':
+          svgString += `<ellipse cx="${cx}" cy="${cy}" rx="${baseRadius}" ry="${baseRadius * 0.6}" stroke="#000" stroke-width="2" fill="none"/>\n`;
+          break;
+      }
+
+      const pattern = patternTypeSelect.value;
+
+      // Reading parameters for generation
+      const density = parseFloat(densitySlider.value);
+      const gapI = parseInt(gapIntervalSlider.value);
+      const gapL = parseInt(gapLengthSlider.value);
+      const waveD = parseFloat(waveDensitySlider.value);
+      const angleV = parseFloat(curveAngleSlider.value);
+      const roseP = parseInt(rosePetalsSlider.value);
+      const maurN = parseFloat(maurerNSlider.value);
+      const maurD = parseFloat(maurerDSlider.value);
+      const inR = parseFloat(innerRadiusSlider.value);
+      const outR = parseFloat(outerRadiusSlider.value);
+      const ringN = parseFloat(ringNodesSlider.value);
+      const ringDivV = parseFloat(ringDivSlider.value);
+      const eBig = parseFloat(epiBig.value);
+      const eSmall = parseFloat(epiSmall.value);
+      const eDist = parseFloat(epiDist.value);
+      const eIsHypo = epiModeHypo.checked;
+      const lisA_x = parseFloat(lisAx.value);
+      const lisA_y = parseFloat(lisAy.value);
+      const lisF_x = parseFloat(lisFx.value);
+      const lisF_y = parseFloat(lisFy.value);
+      const lisPh = parseFloat(lisPhase.value);
+
+      // Whether lines and waves should draw in both directions
+      let both = bothDirections;
+
+      switch (pattern) {
+        case 'pattern1':
+          // Spiral
+          svgString += generateSpiralSVG(cx, cy, baseRadius, density);
+          break;
+
+        case 'pattern4':
+          // Lines
+          svgString += generateLinesSVG(cx, cy, baseRadius, density, gapI, gapL);
+          break;
+
+        case 'pattern5':
+          // Vertical waves
+          svgString += generateWavesSVG(cx, cy, baseRadius, density, gapI, gapL, waveD, both);
+          break;
+
+        case 'pattern6':
+          // Angled
+          svgString += generateAngleSVG(cx, cy, baseRadius, density, gapI, gapL, angleV, both);
+          break;
+
+        case 'pattern8':
+          // Rose
+          svgString += generateRoseSVG(cx, cy, baseRadius, roseP);
+          break;
+
+        case 'pattern10':
+          // Maurer Rose
+          svgString += generateMaurerSVG(cx, cy, baseRadius, maurN, maurD);
+          break;
+
+        case 'pattern11':
+          // Simple Ring
+          svgString += generateSimpleRingSVG(cx, cy, inR, outR, ringN, ringDivV, both);
+          break;
+
+        case 'pattern15':
+          // Epicycloid/Hypocycloid
+          svgString += generateEpicycloidSVG(cx, cy, eBig, eSmall, eDist, eIsHypo);
+          break;
+
+        case 'pattern16':
+          // Lissajous
+          svgString += generateLissajousSVG(cx, cy, lisA_x, lisA_y, lisF_x, lisF_y, lisPh);
+          break;
+
+        default:
+          svgString += `<!-- This pattern is not implemented in the SVG export. -->\n`;
+          break;
+      }
+
+      svgString += `</svg>`;
+      return svgString;
+    }
+
+    /* ============== 6) Functions to generate <path> fragments for SVG ============== */
+
+    // Spiral
+    function generateSpiralSVG(cx, cy, radius, density) {
+      let dPath = '';
+      let first = true;
+      const turns = density;
+      const maxTheta = turns * 2 * Math.PI;
+      const k = radius / maxTheta;
+      for (let theta = 0; theta <= maxTheta; theta += 0.01) {
+        const r = k * theta;
+        const x = cx + r * Math.cos(theta);
+        const y = cy + r * Math.sin(theta);
+        if (first) { dPath += `M ${x} ${y}`; first = false; }
+        else { dPath += ` L ${x} ${y}`; }
+      }
+      return `<path d="${dPath}" stroke="blue" stroke-width="1" fill="none"/>\n`;
+    }
+
+    // Lines
+    function generateLinesSVG(cx, cy, radius, density, gapInterval, gapLength) {
+      let code = '';
+      const numLines = Math.floor(density);
+      for (let i = 0; i < numLines; i++) {
+        if ((i % (gapInterval + gapLength)) >= gapInterval) continue;
+        let angle = (2 * Math.PI * i) / numLines;
+        let x = cx + radius * Math.cos(angle);
+        let y = cy + radius * Math.sin(angle);
+        code += `<line x1="${cx}" y1="${cy}" x2="${x}" y2="${y}" stroke="blue" stroke-width="1"/>\n`;
+      }
+      return code;
+    }
+
+    // Vertical waves
+    function generateWavesSVG(cx, cy, radius, density, gapInterval, gapLength, waveD, both) {
+      let svgCode = '';
+      const numLines = Math.floor(density);
+      const amplitude = 20;
+      const steps = 100;
+
+      function oneWavePath(angle) {
+        let dPath = '';
+        let first = true;
+        for (let j = 0; j <= steps; j++) {
+          const t = j / steps;
+          const baseX = cx + (radius * t) * Math.cos(angle);
+          const baseY = cy + (radius * t) * Math.sin(angle);
+          const offset = amplitude * Math.sin(2 * Math.PI * waveD * t);
+          const x = baseX + offset * (-Math.sin(angle));
+          const y = baseY + offset * Math.cos(angle);
+          if (first) { dPath += `M ${x} ${y}`; first = false; }
+          else { dPath += ` L ${x} ${y}`; }
+        }
+        return `<path d="${dPath}" stroke="blue" stroke-width="1" fill="none"/>\n`;
+      }
+
+      for (let i = 0; i < numLines; i++) {
+        if ((i % (gapInterval + gapLength)) >= gapInterval) continue;
+        let angle = (2 * Math.PI * i) / numLines;
+        svgCode += oneWavePath(angle);
+        if (both) {
+          svgCode += oneWavePath(angle + Math.PI);
+        }
+      }
+      return svgCode;
+    }
+
+    // Angled
+    function generateAngleSVG(cx, cy, radius, density, gapInterval, gapLength, curveAngle, both) {
+      let svgCode = '';
+      const numLines = Math.floor(density);
+      const angleOffset = curveAngle * Math.PI / 180;
+
+      function oneCurve(angle) {
+        // M cx,cy Q controlX,controlY endX,endY
+        const endX = cx + radius * Math.cos(angle);
+        const endY = cy + radius * Math.sin(angle);
+        const controlX = cx + (radius / 2) * Math.cos(angle + angleOffset);
+        const controlY = cy + (radius / 2) * Math.sin(angle + angleOffset);
+
+        return `<path d="M ${cx} ${cy} Q ${controlX} ${controlY} ${endX} ${endY}" stroke="blue" stroke-width="1" fill="none"/>\n`;
+      }
+
+      for (let i = 0; i < numLines; i++) {
+        if ((i % (gapInterval + gapLength)) >= gapInterval) continue;
+        let angle = (2 * Math.PI * i) / numLines;
+        svgCode += oneCurve(angle);
+        if (both) {
+          svgCode += oneCurve(angle + Math.PI);
+        }
+      }
+      return svgCode;
+    }
+
+    // Rose
+    function generateRoseSVG(cx, cy, radius, petals) {
+      let dPath = '';
+      let first = true;
+      const steps = 1000;
+      for (let j = 0; j <= steps; j++) {
+        const t = j / steps;
+        const theta = t * 2 * Math.PI;
+        const r = radius * Math.cos(petals * theta);
+        const x = cx + r * Math.cos(theta);
+        const y = cy + r * Math.sin(theta);
+        if (first) { dPath += `M ${x} ${y}`; first = false; }
+        else { dPath += ` L ${x} ${y}`; }
+      }
+      return `<path d="${dPath}" stroke="blue" stroke-width="1" fill="none"/>\n`;
+    }
+
+    // Maurer Rose
+    function generateMaurerSVG(cx, cy, radius, n, d) {
+      const m = 2 - ((n * d) % 2);
+      const limit = Math.PI * d * m;
+      let dPath = '';
+      let first = true;
+      for (let t = 0; t < limit; t += 0.01) {
+        let rr = radius * Math.cos((n / d) * t);
+        let x = cx + rr * Math.cos(t);
+        let y = cy + rr * Math.sin(t);
+        if (first) { dPath += `M ${x} ${y}`; first = false; }
+        else { dPath += ` L ${x} ${y}`; }
+      }
+      return `<path d="${dPath}" stroke="blue" stroke-width="1" fill="none"/>\n`;
+    }
+
+    // Simple Ring
+    function generateSimpleRingSVG(cx, cy, inR, outR, nodes, div, both) {
+      let code = '';
+      const range = (outR - inR) / 2;
+      const mid = inR + range;
+      const limit = 2 * Math.PI * div;
+
+      function ringOnePath(offset) {
+        let dPath = '';
+        let first = true;
+        for (let t = 0; t <= limit; t += 0.005) {
+          let r = mid + Math.sin((t * nodes) / div) * range;
+          let X = cx + Math.cos(t + offset) * r;
+          let Y = cy + Math.sin(t + offset) * r;
+          if (first) { dPath += `M ${X} ${Y}`; first = false; }
+          else { dPath += ` L ${X} ${Y}`; }
+        }
+        // close path
+        return `<path d="${dPath} Z" stroke="blue" stroke-width="1" fill="none"/>\n`;
+      }
+
+      code += ringOnePath(0);
+      if (both) {
+        code += ringOnePath(Math.PI);
+      }
+      return code;
+    }
+
+    // Epicycloid/Hypocycloid
+    function generateEpicycloidSVG(cx, cy, R, r, d, isHypo) {
+      let dPath = '';
+      let first = true;
+      let maxT = 2 * Math.PI * (R / r);
+      let step = 0.01;
+      for (let t = 0; t <= maxT; t += step) {
+        let xx, yy;
+        if (!isHypo) {
+          xx = (R + r) * Math.cos(t) - d * Math.cos(((R + r) / r) * t);
+          yy = (R + r) * Math.sin(t) - d * Math.sin(((R + r) / r) * t);
+        } else {
+          xx = (R - r) * Math.cos(t) + d * Math.cos(((R - r) / r) * t);
+          yy = (R - r) * Math.sin(t) - d * Math.sin(((R - r) / r) * t);
+        }
+        let X = cx + xx;
+        let Y = cy + yy;
+        if (first) { dPath += `M ${X} ${Y}`; first = false; }
+        else { dPath += ` L ${X} ${Y}`; }
+      }
+      return `<path d="${dPath}" stroke="blue" stroke-width="1" fill="none"/>\n`;
+    }
+
+    // Lissajous
+    function generateLissajousSVG(cx, cy, Ax, Ay, fx, fy, phaseDeg) {
+      let dPath = '';
+      let first = true;
+      let phi = phaseDeg * (Math.PI / 180);
+      let maxF = Math.max(fx, fy);
+      let maxT = 2 * Math.PI * maxF;
+      let step = 0.001 * maxF;
+      for (let t = 0; t <= maxT; t += step) {
+        let x = Ax * Math.sin(fx * t + phi);
+        let y = Ay * Math.sin(fy * t);
+        let X = cx + x;
+        let Y = cy + y;
+        if (first) { dPath += `M ${X} ${Y}`; first = false; }
+        else { dPath += ` L ${X} ${Y}`; }
+      }
+      return `<path d="${dPath}" stroke="blue" stroke-width="1" fill="none"/>\n`;
+    }
+
+    /* ============== 7) Saving ============== */
+    function saveSvg() {
+      const svgData = generateSVG();
+      const blob = new Blob([svgData], { type: "image/svg+xml" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "guilloche_export.svg";
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }
+
+    // Grid (bothDirections)
+    function toggleBothDirections() {
+      bothDirections = !bothDirections;
+      toggleGridButton.textContent = bothDirections ? "Grid: ON" : "Grid: OFF";
+      draw();
+    }
+
+    /* ============== 8) Updating sliders and panels ============== */
+    function updateGapDisplay() {
+      gapIntervalValue.textContent = gapIntervalSlider.value;
+      gapLengthValue.textContent = gapLengthSlider.value;
+    }
+    function updateWaveDisplay() {
+      waveDensityValue.textContent = waveDensitySlider.value;
+    }
+    function updateAngleDisplay() {
+      curveAngleValue.textContent = curveAngleSlider.value + "°";
+    }
+    function updateRoseDisplay() {
+      rosePetalsValue.textContent = rosePetalsSlider.value;
+    }
+    function updateMaurerDisplay() {
+      maurerNValue.textContent = maurerNSlider.value;
+      maurerDValue.textContent = maurerDSlider.value;
+    }
+    function updateRingDisplay() {
+      innerRadiusValue.textContent = innerRadiusSlider.value;
+      outerRadiusValue.textContent = outerRadiusSlider.value;
+      ringNodesValue.textContent = ringNodesSlider.value;
+      ringDivValue.textContent = ringDivSlider.value;
+    }
+    function updateEpicycloidDisplay() {
+      epiBigVal.textContent = epiBig.value;
+      epiSmallVal.textContent = epiSmall.value;
+      epiDistVal.textContent = epiDist.value;
+    }
+    function updateLissajousDisplay() {
+      lisAxVal.textContent = lisAx.value;
+      lisAyVal.textContent = lisAy.value;
+      lisFxVal.textContent = lisFx.value;
+      lisFyVal.textContent = lisFy.value;
+      lisPhaseVal.textContent = lisPhase.value + "°";
+    }
+
+    function updateExtraControls() {
+      const p = patternTypeSelect.value;
+      // Hide density and gap sliders for Rose / Maurer / Simple Ring
+      if (p === 'pattern8' || p === 'pattern10' || p === 'pattern11') {
+        densityContainer.style.display = "none";
+        gapControls.style.display = "none";
+      } else {
+        densityContainer.style.display = "block";
+        if (p === 'pattern4' || p === 'pattern5' || p === 'pattern6') {
+          gapControls.style.display = "block";
+        } else {
+          gapControls.style.display = "none";
+        }
+      }
+      waveControls.style.display = (p === 'pattern5') ? "block" : "none";
+      angleControls.style.display = (p === 'pattern6') ? "block" : "none";
+      roseControls.style.display = (p === 'pattern8') ? "block" : "none";
+      maurerControls.style.display = (p === 'pattern10') ? "block" : "none";
+      ringControls.style.display = (p === 'pattern11') ? "block" : "none";
+
+      epicycloidControls.style.display = (p === 'pattern15') ? "block" : "none";
+      lissajousControls.style.display = (p === 'pattern16') ? "block" : "none";
+    }
+
+    /* ============== 9) Initialization ============== */
+    baseShapeSelect.addEventListener('change', draw);
+    patternTypeSelect.addEventListener('change', () => { updateExtraControls(); draw(); });
+
+    densitySlider.addEventListener('input', draw);
+    gapIntervalSlider.addEventListener('input', () => { updateGapDisplay(); draw(); });
+    gapLengthSlider.addEventListener('input', () => { updateGapDisplay(); draw(); });
+    waveDensitySlider.addEventListener('input', () => { updateWaveDisplay(); draw(); });
+    curveAngleSlider.addEventListener('input', () => { updateAngleDisplay(); draw(); });
+    rosePetalsSlider.addEventListener('input', () => { updateRoseDisplay(); draw(); });
+    maurerNSlider.addEventListener('input', () => { updateMaurerDisplay(); draw(); });
+    maurerDSlider.addEventListener('input', () => { updateMaurerDisplay(); draw(); });
+    innerRadiusSlider.addEventListener('input', () => { updateRingDisplay(); draw(); });
+    outerRadiusSlider.addEventListener('input', () => { updateRingDisplay(); draw(); });
+    ringNodesSlider.addEventListener('input', () => { updateRingDisplay(); draw(); });
+    ringDivSlider.addEventListener('input', () => { updateRingDisplay(); draw(); });
+
+    epiBig.addEventListener('input', () => { updateEpicycloidDisplay(); draw(); });
+    epiSmall.addEventListener('input', () => { updateEpicycloidDisplay(); draw(); });
+    epiDist.addEventListener('input', () => { updateEpicycloidDisplay(); draw(); });
+    epiModeEpi.addEventListener('change', draw);
+    epiModeHypo.addEventListener('change', draw);
+
+    lisAx.addEventListener('input', () => { updateLissajousDisplay(); draw(); });
+    lisAy.addEventListener('input', () => { updateLissajousDisplay(); draw(); });
+    lisFx.addEventListener('input', () => { updateLissajousDisplay(); draw(); });
+    lisFy.addEventListener('input', () => { updateLissajousDisplay(); draw(); });
+    lisPhase.addEventListener('input', () => { updateLissajousDisplay(); draw(); });
+
+    saveSvgButton.addEventListener('click', saveSvg);
+    toggleGridButton.addEventListener('click', toggleBothDirections);
+
+    function initializeUI() {
+      updateExtraControls();
+      updateGapDisplay();
+      updateWaveDisplay();
+      updateAngleDisplay();
+      updateRoseDisplay();
+      updateMaurerDisplay();
+      updateRingDisplay();
+      updateEpicycloidDisplay();
+      updateLissajousDisplay();
+      draw();
+    }
+
+    initializeUI();
+  </script>
+</body>
+</html>
